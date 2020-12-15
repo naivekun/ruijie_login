@@ -29,11 +29,11 @@ jobs:
         fi
 
     - name: Build - Linux
-      run: GOOS=linux go build -v . && zip release-linux.zip ruijie_login 
+      run: GOOS=linux go build -ldflags="-s -w" -v . && zip release-linux.zip ruijie_login 
     - name: Build - Windows
-      run: GOOS=windows go build -v . && zip release-windows.zip ruijie_login.exe
+      run: GOOS=windows go build -ldflags="-s -w" -v . && zip release-windows.zip ruijie_login.exe
     - name: Build - MacOS
-      run: GOOS=darwin go build -v . && zip release-macos.zip ruijie_login
+      run: GOOS=darwin go build -ldflags="-s -w" -v . && zip release-macos.zip ruijie_login
 
     - name: Create Release
       id: create_release
