@@ -12,21 +12,23 @@ import (
 )
 
 func (c *Config) loginLoop(doLoginReqChan chan bool, resultChan chan int) {
-	for i := range c.Accounts {
-		<-doLoginReqChan
-		loginStatus := c.login(i)
-		switch loginStatus {
-		case LOGIN_SUCCESS:
-			log.Println("user " + c.Accounts[i].Username + " login success")
-		case ERR_TIMEOUT:
-			log.Println("http request timeout, will retry after " + strconv.Itoa(c.RetryInterval) + " seconds")
-		case ERR_LOGIN_FAILED:
-			log.Println("http request failed, will retry after " + strconv.Itoa(c.RetryInterval) + " seconds")
-		case ERR_WRONG_CREDS:
-			log.Println("invalid credentials")
-			os.Exit(1)
+	for {
+		for i := range c.Accounts {
+			<-doLoginReqChan
+			loginStatus := c.login(i)
+			switch loginStatus {
+			case LOGIN_SUCCESS:
+				log.Println("user " + c.Accounts[i].Username + " login success")
+			case ERR_TIMEOUT:
+				log.Println("http request timeout, will retry after " + strconv.Itoa(c.RetryInterval) + " seconds")
+			case ERR_LOGIN_FAILED:
+				log.Println("http request failed, will retry after " + strconv.Itoa(c.RetryInterval) + " seconds")
+			case ERR_WRONG_CREDS:
+				log.Println("invalid credentials")
+				os.Exit(1)
+			}
+			resultChan <- loginStatus
 		}
-		resultChan <- loginStatus
 	}
 }
 
