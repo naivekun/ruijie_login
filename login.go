@@ -54,14 +54,20 @@ func (c *Config) login(idx int) int {
 	}
 	initData, err := ioutil.ReadAll(initReq.Body)
 	initReq.Body.Close()
+	initDataStr := string(initData)
 
-	formData := strings.TrimPrefix(string(initData), "<script>top.self.location.href='http://192.168.50.3:8080/eportal/index.jsp?")
+	url_regex := regexp.MustCompile(`top\.self\.location\.href='(https?://.+)/eportal/index.jsp`)
+	url_match := url_regex.FindStringSubmatch(initDataStr)
+	if len(url_match) != 2 {
+		return ERR_LOGIN_FAILED
+	}
+	ruijie_url := url_match[1]
+	formData := strings.TrimPrefix(initDataStr, fmt.Sprintf("<script>top.self.location.href='%s/eportal/index.jsp?", ruijie_url))
 	formData = strings.TrimSuffix(formData, "'</script>\r\n")
 	if !strings.HasPrefix(formData, "wlanuserip=") {
 		return LOGIN_SUCCESS
 	}
-
-	cookieResp, err := http.Get("http://192.168.50.3:8080/eportal/nologin.jsp")
+	cookieResp, err := http.Get(fmt.Sprintf("%s/eportal/nologin.jsp", ruijie_url))
 	if err != nil {
 		return ERR_LOGIN_FAILED
 	}
@@ -81,7 +87,7 @@ func (c *Config) login(idx int) int {
 	form.Add("passwordEncrypt", "true")
 
 	client := http.Client{}
-	req, _ := http.NewRequest("POST", "http://192.168.50.3:8080/eportal/InterFace.do?method=login", strings.NewReader(form.Encode()))
+	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/eportal/InterFace.do?method=login", ruijie_url), strings.NewReader(form.Encode()))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
 	req.Header.Add("Cookie", cookie)
 	resp, err := client.Do(req)
