@@ -56,29 +56,29 @@ func (c *Config) login(idx int) int {
 	initReq.Body.Close()
 	initDataStr := string(initData)
 
-	url_regex := regexp.MustCompile(`top\.self\.location\.href='(https?://.+)/eportal/index.jsp`)
-	url_match := url_regex.FindStringSubmatch(initDataStr)
-	if len(url_match) != 2 {
+	urlRegex := regexp.MustCompile(`top\.self\.location\.href='(https?://.+)/eportal/index.jsp`)
+	urlMatch := urlRegex.FindStringSubmatch(initDataStr)
+	if len(urlMatch) != 2 {
 		return ERR_LOGIN_FAILED
 	}
-	ruijie_url := url_match[1]
-	formData := strings.TrimPrefix(initDataStr, fmt.Sprintf("<script>top.self.location.href='%s/eportal/index.jsp?", ruijie_url))
+	ruijieUrl := urlMatch[1]
+	formData := strings.TrimPrefix(initDataStr, fmt.Sprintf("<script>top.self.location.href='%s/eportal/index.jsp?", ruijieUrl))
 	formData = strings.TrimSuffix(formData, "'</script>\r\n")
 	if !strings.HasPrefix(formData, "wlanuserip=") {
 		return LOGIN_SUCCESS
 	}
-	cookieResp, err := http.Get(fmt.Sprintf("%s/eportal/nologin.jsp", ruijie_url))
+	cookieResp, err := http.Get(fmt.Sprintf("%s/eportal/nologin.jsp", ruijieUrl))
 	if err != nil {
 		return ERR_LOGIN_FAILED
 	}
 	cookie := cookieResp.Header.Get("Set-Cookie")
 	fmt.Println(cookie)
-	mac_reg := regexp.MustCompile(`mac=([0-9a-f]+)&`)
-	mac_match := mac_reg.FindStringSubmatch(formData)
-	if len(mac_match) != 2 {
+	macReg := regexp.MustCompile(`mac=([0-9a-f]+)&`)
+	macMatch := macReg.FindStringSubmatch(formData)
+	if len(macMatch) != 2 {
 		return ERR_LOGIN_FAILED
 	}
-	mac := mac_match[1]
+	mac := macMatch[1]
 	form := url.Values{}
 	form.Add("userId", c.Accounts[idx].Username)
 	form.Add("password", encrypt(fmt.Sprintf("%s>%s", c.Accounts[idx].Password, mac)))
@@ -87,7 +87,7 @@ func (c *Config) login(idx int) int {
 	form.Add("passwordEncrypt", "true")
 
 	client := http.Client{}
-	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/eportal/InterFace.do?method=login", ruijie_url), strings.NewReader(form.Encode()))
+	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/eportal/InterFace.do?method=login", ruijieUrl), strings.NewReader(form.Encode()))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
 	req.Header.Add("Cookie", cookie)
 	resp, err := client.Do(req)
